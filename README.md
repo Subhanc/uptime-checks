@@ -13,10 +13,15 @@ that is not marked as a test account, and cleans up after itself when it fails.
 | `vendor_table.probe` | Reserves a table and releases it. |
 | `membership.probe` | Starts a membership and cancels it. |
 | `shop.card_payment` and three more | Pays for a test product with a declined test card, then a good one, refunds it, and reads the refund back (`shop.declined_retry`, `shop.refund`, `refunds.settled`). |
+| `ticket.card_payment` and two more | The same for a ticket: declined card, good card, the order completes, refund, refund read back (`ticket.declined_retry`, `ticket.refund`). |
+| `vendor_table.card_payment` and two more | The same for a vendor table; the refund puts the table back on the floor. |
+| `membership.card_payment` and two more | The same for a membership's first payment, then the membership is cancelled. |
+| `course.card_payment` and two more | The same for a course bought as a guest; the refund ends the access. |
 
 ## Files
 
 - `scripts/*-probe.mjs`: the checks. Plain Node, no packages.
+- `scripts/paid-probe-lib.mjs`: the steps the paid probes share.
 - `scripts/*-probe-fixture.json`: which test account each check uses.
 - `scripts/report-reliability-result.mjs`: reports one result, and cleans
   secrets and email addresses out of the output before it reaches the log.

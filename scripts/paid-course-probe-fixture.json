@@ -1,0 +1,18 @@
+{
+  "_comment": [
+    "The paid course probe's fixture (scripts/paid-course-probe.mjs).",
+    "",
+    "The course the courses end-to-end pass left on the QA test organization",
+    "(isTestAccount, test-mode payments). It is shared with the deployed course",
+    "checks, and safely: a course is sold per buyer, and the probe buys as its own",
+    "fixed address, so its enrollment is the only one it touches. Each run buys,",
+    "refunds (which ends its access) and the next run buys again on the same row.",
+    "",
+    "`priceCents` / `currency` are asserted against the checkout's own answer, so a",
+    "re-priced course fails here rather than charging a different test amount."
+  ],
+  "orgSlug": "qa-screenshot-public-org",
+  "courseId": "6afba9b272b722fe384604ec",
+  "priceCents": 4900,
+  "currency": "cad"
+}

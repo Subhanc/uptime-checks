@@ -60,6 +60,20 @@ jobs:
             # product in the same second lose the stock write to each other and the second is
             # answered 503 "checkout is busy" (first run, 45768190331).
             lock: checkout-probe.mjs
+          # The same shape for the other checkouts: decline, retry, pay, refund, read the
+          # refund back. Each reports <flow>.card_payment, .declined_retry and .refund.
+          - check: ticket.card_payment
+            script: paid-ticket-probe.mjs
+            # Same tier as ticket.probe, which counts its seats before and after.
+            lock: ticket-checkout-probe.mjs
+          - check: vendor_table.card_payment
+            script: paid-vendor-table-probe.mjs
+            # Same pinned table as vendor_table.probe.
+            lock: vendor-tables-probe.mjs
+          - check: membership.card_payment
+            script: paid-membership-probe.mjs
+          - check: course.card_payment
+            script: paid-course-probe.mjs
     # Never two runs of the same probe at once: each one holds a unit, a seat or
     # a table until it cancels. A run that would overlap waits instead.
     concurrency:
