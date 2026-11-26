@@ -17,6 +17,7 @@ that is not marked as a test account, and cleans up after itself when it fails.
 | `vendor_table.card_payment` and two more | The same for a vendor table; the refund puts the table back on the floor. |
 | `membership.card_payment` and two more | The same for a membership's first payment, then the membership is cancelled. |
 | `course.card_payment` and two more | The same for a course bought as a guest; the refund ends the access. |
+| `booking.card_payment` and two more | The same for a booking of a probe-only service; the refund also cancels it, freeing the date. |
 
 ## Files
 

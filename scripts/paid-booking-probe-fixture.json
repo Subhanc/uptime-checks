@@ -1,0 +1,28 @@
+{
+  "_comment": [
+    "The paid booking probe's fixture (scripts/paid-booking-probe.mjs).",
+    "",
+    "A Service made for the probe alone and shared with nothing, on the demo",
+    "organization the shop probe uses (isTestAccount, test-mode payments), like",
+    "the shop's `PROBE — do not buy` product. It is published because the probe",
+    "books through the same public path a customer does.",
+    "",
+    "Why each setting is what it is:",
+    "  timezone UTC    the probe builds the start time as an ISO instant from the",
+    "                  open-times answer; in UTC the slot's wall time IS the instant.",
+    "  no approval     a booking without a seller decision is paid in full at",
+    "                  checkout (deposit = total, no balance), so one payment is",
+    "                  the whole of the money and one refund gives all of it back.",
+    "  open every day  10:00 to 17:00, one booking per day, 1 to 60 days ahead. The",
+    "                  probe refunds and CANCELS what it books, which frees the date;",
+    "                  it books `daysAhead` out, moving on to the next open date if",
+    "                  that one is taken.",
+    "",
+    "`priceCents` / `currency` are asserted against the checkout's own quote."
+  ],
+  "orgSlug": "pokemarket-nyc-demo",
+  "bookableId": "6b07e0cf64132dadb2f96d0b",
+  "priceCents": 300,
+  "currency": "usd",
+  "daysAhead": 30
+}

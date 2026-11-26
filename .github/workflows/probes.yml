@@ -74,6 +74,8 @@ jobs:
             script: paid-membership-probe.mjs
           - check: course.card_payment
             script: paid-course-probe.mjs
+          - check: booking.card_payment
+            script: paid-booking-probe.mjs
     # Never two runs of the same probe at once: each one holds a unit, a seat or
     # a table until it cancels. A run that would overlap waits instead.
     concurrency:
