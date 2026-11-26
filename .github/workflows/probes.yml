@@ -1,4 +1,5 @@
 name: Probes
+# schedule re-registered 2026-11-26
 
 # The checkout probes, every hour, on GitHub-hosted runners.
 #
