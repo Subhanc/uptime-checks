@@ -12,7 +12,9 @@
  *   which also ends the course access → read the refund back from the payment
  *   provider
  *
- * Reports `course.declined_retry`, `course.card_payment` and `course.refund`.
+ * Reports `course.declined_retry`, `course.card_payment`, `course.refund`, and
+ * `course.probe` (the whole buy-then-cancel round trip, ending with the receipt
+ * read back as refunded and no longer granting access).
  *
  * One fixed buyer, every run (`PROBE_CUSTOMER_EMAIL`). The refund leaves its
  * enrollment refunded, and the next run's checkout opens a new charge on it.
@@ -128,6 +130,20 @@ try {
   await refundAndReadBack(`/course-enrollments/${purchaseId}/probe-refund`, () => {
     refunded = true;
   });
+
+  await step('the refund ends the course access', async () => {
+    // The guest receipt, read with the checkout's own receipt token: `paid` is the
+    // server's access grant (an active row from a paying source).
+    const read = await api(
+      'GET',
+      `/courses/${contract.courseId}/purchases/${purchaseId}/receipt?token=${encodeURIComponent(checkout.receiptToken)}`,
+    );
+    expectStatus(read, 200);
+    const receipt = read.json?.receipt;
+    check(receipt?.status === 'refunded', `the enrollment is "${receipt?.status}" after the refund`);
+    check(receipt?.paid === false, 'the receipt still grants access after the refund');
+    return 'refunded, no access';
+  });
 } catch (err) {
   failure = err instanceof ProbeFailure ? err : new ProbeFailure(`unexpected error: ${err?.message || err}`);
 } finally {
@@ -150,4 +166,8 @@ await finish('paid course probe', failure, [
   { checkKey: 'course.declined_retry', names: [...SETUP, ...PAID_STEPS.declined] },
   { checkKey: 'course.card_payment', names: [...SETUP, ...PAID_STEPS.paid, 'the checkout confirms to enrolled'] },
   { checkKey: 'course.refund', names: [...SETUP, ...PAID_STEPS.paid, 'the checkout confirms to enrolled', ...PAID_STEPS.refund] },
+  {
+    checkKey: 'course.probe',
+    names: [...SETUP, ...PAID_STEPS.paid, 'the checkout confirms to enrolled', ...PAID_STEPS.refund, 'the refund ends the course access'],
+  },
 ]);

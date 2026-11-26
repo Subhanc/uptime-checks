@@ -13,7 +13,8 @@
  *   cancel the booking, so the date is free again (probe-only route) → read the
  *   refund back from the payment provider
  *
- * Reports `booking.declined_retry`, `booking.card_payment` and `booking.refund`.
+ * Reports `booking.declined_retry`, `booking.card_payment`, `booking.refund`, and
+ * `booking.probe` (the whole book-pay-cancel round trip, ending with the date free).
  *
  * One fixed buyer, every run (`PROBE_CUSTOMER_EMAIL`). Safety is
  * `paid-probe-lib.mjs`'s: test mode asserted before any card, test cards only,
@@ -160,6 +161,10 @@ await finish('paid booking probe', failure, [
   { checkKey: 'booking.card_payment', names: [...SETUP, ...PAID_STEPS.paid, 'the booking confirms'] },
   {
     checkKey: 'booking.refund',
+    names: [...SETUP, ...PAID_STEPS.paid, 'the booking confirms', ...PAID_STEPS.refund, 'the booking is cancelled and its date is free'],
+  },
+  {
+    checkKey: 'booking.probe',
     names: [...SETUP, ...PAID_STEPS.paid, 'the booking confirms', ...PAID_STEPS.refund, 'the booking is cancelled and its date is free'],
   },
 ]);
