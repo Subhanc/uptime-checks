@@ -1,9 +1,3 @@
-      # Secrets, not variables: Actions masks secrets in the public log, and the
-      # public files never name the service they check.
-      PROBE_API_URL: ${{ secrets.PROBE_API_URL }}
-      RELIABILITY_API_URL: ${{ secrets.PROBE_API_URL }}
-      PROBE_CUSTOMER_EMAIL: ${{ secrets.PROBE_CUSTOMER_EMAIL }}
-      PROBE_BUYER_EMAIL: ${{ secrets.PROBE_BUYER_EMAIL }}
 name: Probes
 
 # The four checkout probes, every hour, on GitHub-hosted runners.
