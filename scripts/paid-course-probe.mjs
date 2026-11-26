@@ -124,7 +124,9 @@ try {
       if (last.status >= 400) break;
       await sleep(CONFIRM_POLL_INTERVAL_MS);
     }
-    fail(`the checkout did not reach "enrolled" after a successful payment (HTTP ${last?.status}, "${last?.json?.status}")`);
+    // A refusal carries `code`/`message`, not `status`: name what the server said.
+    const said = last?.json?.status ?? last?.json?.code ?? last?.json?.message;
+    fail(`the checkout did not reach "enrolled" after a successful payment (HTTP ${last?.status}, "${said}")`);
   });
 
   await refundAndReadBack(`/course-enrollments/${purchaseId}/probe-refund`, () => {
