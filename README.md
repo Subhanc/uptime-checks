@@ -12,6 +12,7 @@ that is not marked as a test account, and cleans up after itself when it fails.
 | `ticket.probe` | Starts a ticket order and cancels it. |
 | `vendor_table.probe` | Reserves a table and releases it. |
 | `membership.probe` | Starts a membership and cancels it. |
+| `shop.card_payment` and three more | Pays for a test product with a declined test card, then a good one, refunds it, and reads the refund back (`shop.declined_retry`, `shop.refund`, `refunds.settled`). |
 
 ## Files
 

@@ -1,6 +1,6 @@
 name: Probes
 
-# The four checkout probes, every hour, on GitHub-hosted runners.
+# The checkout probes, every hour, on GitHub-hosted runners.
 #
 # Hourly, not every 15 minutes: each run makes a real test-mode order or
 # Stripe test subscription and cancels it, so 15 minutes would be ~96 per probe
@@ -39,7 +39,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 8
     strategy:
-      # One probe failing must not cancel the other three.
+      # One probe failing must not cancel the others.
       fail-fast: false
       matrix:
         include:
@@ -51,6 +51,11 @@ jobs:
             script: vendor-tables-probe.mjs
           - check: membership.probe
             script: subscription-checkout-probe.mjs
+          # Pays with test cards (one declined, one good), refunds, and reads the refund
+          # back. Reports shop.card_payment, shop.declined_retry, shop.refund and
+          # refunds.settled itself; the matrix key is the first of them.
+          - check: shop.card_payment
+            script: paid-checkout-probe.mjs
     # Never two runs of the same probe at once: each one holds a unit, a seat or
     # a table until it cancels. A run that would overlap waits instead.
     concurrency:
