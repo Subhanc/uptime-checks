@@ -1,0 +1,127 @@
+      # Secrets, not variables: Actions masks secrets in the public log, and the
+      # public files never name the service they check.
+      PROBE_API_URL: ${{ secrets.PROBE_API_URL }}
+      RELIABILITY_API_URL: ${{ secrets.PROBE_API_URL }}
+      PROBE_CUSTOMER_EMAIL: ${{ secrets.PROBE_CUSTOMER_EMAIL }}
+      PROBE_BUYER_EMAIL: ${{ secrets.PROBE_BUYER_EMAIL }}
+name: Probes
+
+# The four checkout probes, every hour, on GitHub-hosted runners.
+#
+# Hourly, not every 15 minutes: each run makes a real test-mode order or
+# Stripe test subscription and cancels it, so 15 minutes would be ~96 per probe
+# per day. A deploy dispatch runs them straight away between the hourly runs.
+#
+# This file lives in the PUBLIC monitor repository. It is kept in the product
+# repository under `monitor/` and copied here by `scripts/sync-monitor-repo.sh`,
+# so edit it there, never here. Read the README before changing anything.
+#
+# Each probe buys or reserves one thing on a TEST organization with a test card,
+# checks the answer, and cancels what it made. Each one refuses to run against
+# an organization that is not marked as a test account. Each one reports its
+# steps to the Reliability page itself (`scripts/report-reliability-result.mjs`).
+#
+# Run logs in a public repository are public, so every probe's output goes
+# through `report-reliability-result.mjs --scrub-stdin` before it reaches the
+# log, and the last step fails the job if the probe key appears in what the
+# probe printed.
+
+on:
+  schedule:
+    - cron: '7 * * * *'
+  workflow_dispatch:
+  # Sent by the product repository after a deploy:
+  #   gh api repos/<owner>/<monitor-repo>/dispatches \
+  #     -f event_type=deploy -f 'client_payload[sha]=<deployed commit>'
+  repository_dispatch:
+    types: [deploy]
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    name: ${{ matrix.check }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    strategy:
+      # One probe failing must not cancel the other three.
+      fail-fast: false
+      matrix:
+        include:
+          - check: shop.probe
+            script: checkout-probe.mjs
+          - check: ticket.probe
+            script: ticket-checkout-probe.mjs
+          - check: vendor_table.probe
+            script: vendor-tables-probe.mjs
+          - check: membership.probe
+            script: subscription-checkout-probe.mjs
+    # Never two runs of the same probe at once: each one holds a unit, a seat or
+    # a table until it cancels. A run that would overlap waits instead.
+    concurrency:
+      group: probe-${{ matrix.script }}
+      cancel-in-progress: false
+    env:
+      # Secrets, not variables: Actions masks secrets in the public log, and the
+      # public files never name the service they check.
+      PROBE_API_URL: ${{ secrets.PROBE_API_URL }}
+      RELIABILITY_API_URL: ${{ secrets.PROBE_API_URL }}
+      PROBE_CUSTOMER_EMAIL: ${{ secrets.PROBE_CUSTOMER_EMAIL }}
+      PROBE_BUYER_EMAIL: ${{ secrets.PROBE_BUYER_EMAIL }}
+      PROBE_API_KEY: ${{ secrets.PROBE_API_KEY }}
+      SLACK_ALERTS_WEBHOOK_URL: ${{ secrets.SLACK_ALERTS_WEBHOOK_URL }}
+      # The product commit a deploy run is about. Empty on every other run:
+      # GITHUB_SHA here is this repository's own commit and says nothing about
+      # the product.
+      RELIABILITY_COMMIT: ${{ github.event.client_payload.sha || '' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      # Fails red rather than skipping: a probe that cannot run must not look
+      # like a probe that passed.
+      - name: Guard - secrets are set
+        run: |
+          for name in PROBE_API_URL PROBE_CUSTOMER_EMAIL PROBE_BUYER_EMAIL; do
+            if [ -z "${!name}" ]; then
+              echo "::error::Repository secret $name is not set. See the README."
+              exit 1
+            fi
+          done
+          if [ -z "$PROBE_API_KEY" ]; then
+            echo "::error::Repository secret PROBE_API_KEY is not set, so the probes cannot mark or cancel what they create. Set it to the same value the backend holds: gh secret set PROBE_API_KEY"
+            exit 1
+          fi
+          echo "PROBE_API_KEY present."
+
+      - name: Run the probe
+        shell: bash
+        run: |
+          set -o pipefail
+          node "scripts/${{ matrix.script }}" 2>&1 \
+            | tee probe-output.log \
+            | node scripts/report-reliability-result.mjs --scrub-stdin
+
+      # Compares without printing: grep reads the key from the environment and
+      # says only whether it matched. `probe-output.log` is the probe's raw
+      # output, before the scrub, so this catches a probe that printed the key
+      # even though the scrub kept it out of the public log.
+      - name: Log safety - the probe key is not in the output
+        if: always()
+        shell: bash
+        run: |
+          if [ ! -f probe-output.log ]; then
+            echo "The probe did not run, so there is no output to check."
+            exit 0
+          fi
+          if [ -n "$PROBE_API_KEY" ] && grep -qF -- "$PROBE_API_KEY" probe-output.log; then
+            rm -f probe-output.log
+            echo "::error::The probe key appeared in this run's output. Rotate PROBE_API_KEY on the backend and here, then fix the line that printed it."
+            exit 1
+          fi
+          rm -f probe-output.log
+          echo "The probe key does not appear in this run's output."

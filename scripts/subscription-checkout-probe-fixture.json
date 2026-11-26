@@ -1,0 +1,18 @@
+{
+  "_comment": [
+    "The subscription (membership dues) checkout probe's fixture.",
+    "",
+    "The demo org every other checkout probe uses. It is isTestAccount, so member",
+    "billing runs on Stripe TEST keys, and the probe re-proves that from the API",
+    "itself (payments/config, checkout-config and the create's own mode) before it",
+    "pays anything. `planId` must be listed on the org's public page, so a plan id",
+    "that drifted to another org is refused before any write.",
+    "",
+    "`unitAmountCents` is asserted against checkout-config: a plan re-priced on",
+    "the demo org fails here rather than silently charging a different test amount."
+  ],
+  "orgSlug": "pokemarket-nyc-demo",
+  "planId": "6a9105d90b83ac52e079de67",
+  "planSlug": "collector",
+  "unitAmountCents": 1200
+}
