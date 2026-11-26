@@ -56,10 +56,14 @@ jobs:
           # refunds.settled itself; the matrix key is the first of them.
           - check: shop.card_payment
             script: paid-checkout-probe.mjs
+            # Same probe-only product as shop.probe, so the two take turns: two orders on one
+            # product in the same second lose the stock write to each other and the second is
+            # answered 503 "checkout is busy" (first run, 45768190331).
+            lock: checkout-probe.mjs
     # Never two runs of the same probe at once: each one holds a unit, a seat or
     # a table until it cancels. A run that would overlap waits instead.
     concurrency:
-      group: probe-${{ matrix.script }}
+      group: probe-${{ matrix.lock || matrix.script }}
       cancel-in-progress: false
     env:
       # Secrets, not variables: Actions masks secrets in the public log, and the
