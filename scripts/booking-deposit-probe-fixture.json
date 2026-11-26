@@ -1,0 +1,29 @@
+{
+  "_comment": [
+    "The booking DEPOSIT probe's fixture (scripts/booking-deposit-probe.mjs).",
+    "",
+    "A Service made for this probe alone, on the demo organization the other",
+    "probes use (isTestAccount, test-mode payments), created and published",
+    "through the dashboard's own service editor: `PROBE — deposit, do not book`.",
+    "",
+    "Why each setting is what it is:",
+    "  $3, $1 deposit   the checkout takes $1 and saves the card; the balance job",
+    "                   charges the other $2 off-session when it falls due.",
+    "  balance due 1    day before the start. The probe books the first slot a",
+    "                   day and a few minutes ahead, so the balance falls due",
+    "                   minutes after the run and the next run finds it charged.",
+    "  15-minute slots  open all day, every day, UTC, no notice floor: there is",
+    "                   always a slot close to a day ahead.",
+    "  no approval      the deposit is charged at checkout, not held.",
+    "",
+    "`priceCents` / `depositCents` / `currency` are asserted against the quote."
+  ],
+  "orgSlug": "pokemarket-nyc-demo",
+  "bookableId": "6b082eeed1e22e45940d0f88",
+  "priceCents": 300,
+  "depositCents": 100,
+  "currency": "usd",
+  "balanceDueDaysBeforeStart": 1,
+  "leadMinutesPastBalanceWindow": 5,
+  "graceMinutesAfterDue": 25
+}

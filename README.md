@@ -18,6 +18,7 @@ that is not marked as a test account, and cleans up after itself when it fails.
 | `membership.card_payment` and two more | The same for a membership's first payment, then the membership is cancelled. |
 | `course.card_payment` and two more | The same for a course bought as a guest; the refund ends the access. |
 | `booking.card_payment` and two more | The same for a booking of a probe-only service; the refund also cancels it, freeing the date. |
+| `booking.deposit` | Two runs make one answer: each books a probe-only service with a small deposit whose balance falls due minutes later, and checks the previous run's balance was charged automatically, then refunds both payments and cancels it. |
 
 ## Files
 

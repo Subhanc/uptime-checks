@@ -76,6 +76,11 @@ jobs:
             script: paid-course-probe.mjs
           - check: booking.card_payment
             script: paid-booking-probe.mjs
+          # Two runs make one answer: each books a deposit whose balance falls due minutes
+          # later, and checks the previous run's balance was charged by the balance job, then
+          # refunds and cancels it. Its own Service, so no lock with booking.card_payment.
+          - check: booking.deposit
+            script: booking-deposit-probe.mjs
     # Never two runs of the same probe at once: each one holds a unit, a seat or
     # a table until it cancels. A run that would overlap waits instead.
     concurrency:
