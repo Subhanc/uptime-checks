@@ -83,6 +83,7 @@ try {
   assertConfigured();
 
   let organization;
+  let publishableKey;
   await step('the probe organization is served and its payments are in test mode', async () => {
     const preview = await api('GET', `/organizations/${contract.orgSlug}/public-preview/v2`);
     expectStatus(preview, 200);
@@ -91,6 +92,7 @@ try {
     const config = await api('GET', `/payments/config?orgId=${encodeURIComponent(organization.id)}`);
     expectStatus(config, 200);
     assertTestKey('/payments/config', config.json?.publishableKey, config.json?.mode);
+    publishableKey = config.json.publishableKey;
     return `provider ${config.json?.provider}, test mode`;
   });
 
@@ -184,9 +186,10 @@ try {
     });
 
     await step('pay the deposit with a good test card', async () => {
-      const publishableKey = checkout.payment.clientConfig.publishableKey;
-      assertTestKey('checkout', publishableKey, checkout.payment.clientConfig.mode);
-      const paid = await confirmPayment(checkout.payment.clientToken, publishableKey, GOOD_CARD);
+      // The checkout's own key when it names one, else the account's, checked test above.
+      const key = checkout.payment.clientConfig.publishableKey || publishableKey;
+      assertTestKey('checkout', key, checkout.payment.clientConfig.mode);
+      const paid = await confirmPayment(checkout.payment.clientToken, key, GOOD_CARD);
       check(paid.status === 200 && paid.json?.status === 'succeeded', `the deposit did not succeed (HTTP ${paid.status}, ${paid.json?.status ?? paid.json?.error?.code})`);
       check(paid.json?.livemode === false, 'the payment reports livemode, STOP: this is not a test payment');
       check(paid.json?.amount === contract.depositCents, `the provider charged ${paid.json?.amount}, not the deposit`);
