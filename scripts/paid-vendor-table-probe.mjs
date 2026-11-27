@@ -26,6 +26,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import {
+  BUYER_EMAIL,
   PAID_STEPS,
   ProbeFailure,
   api,
@@ -102,6 +103,19 @@ try {
     return `order ${orderId}, total ${order.total} ${order.currency}`;
   });
 
+  // A real vendor gives a name, an email and a phone before paying, and the
+  // confirmation email goes to that email. Without this the order completes with
+  // no address and no receipt is ever sent, so `vendor_table.receipt_email` has
+  // nothing to find. The fixed test buyer, never a per-run address, and no
+  // phone, so nothing can be texted.
+  await step('give the vendor details', async () => {
+    const info = await api('PATCH', `/events/${eventId}/vendor-tables/orders/${orderId}/vendor-info`, {
+      body: { vendorName: 'Reliability probe', vendorEmail: BUYER_EMAIL, vendorPhone: '' },
+    });
+    expectStatus(info, 200);
+    return 'vendor details saved';
+  });
+
   await declineThenPay(order.clientSecret, publishableKey, () => {
     paid = true;
   });
@@ -140,7 +154,7 @@ try {
   }
 }
 
-const SETUP = ['find the probe event and table', 'the payment account is a test account', 'start a vendor table order'];
+const SETUP = ['find the probe event and table', 'the payment account is a test account', 'start a vendor table order', 'give the vendor details'];
 await finish('paid vendor table probe', failure, [
   { checkKey: 'vendor_table.declined_retry', names: [...SETUP, ...PAID_STEPS.declined] },
   { checkKey: 'vendor_table.card_payment', names: [...SETUP, ...PAID_STEPS.paid, 'the order completes'] },
